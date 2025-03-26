@@ -35,8 +35,9 @@ Route::get('/notes/import', [NoteController::class, 'notesImport']);
 //Route::get('/notes/create', [NoteController::class, 'create']);
 //Route::post('/notes', [NoteController::class, 'store'])->middleware('auth');
 Route::get('/notes/{note}', [NoteController::class, 'show']);
-Route::get('/notes/run-simulation/{id}', [SimulationController::class, 'runSimulation']);
-
+Route::get('/notes/run-simulation/{id}', [SimulationController::class, 'runSimulation'])->name('simulation.show');
+Route::post('/notes/run-simulation/{id}', [SimulationController::class, 'runSimulation']);
+Route::delete('/notes/simulation/{id}/delete', [SimulationController::class, 'deleteScenario'])->name('simulation.delete');
 
 Route::get('notes-export', [NoteController::class, 'export'])->name('notes.export');
 Route::post('notes-import', [NoteController::class, 'import'])->name('notes.import');
