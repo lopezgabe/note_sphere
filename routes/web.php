@@ -38,6 +38,9 @@ Route::get('/notes/{note}', [NoteController::class, 'show']);
 Route::get('/notes/run-simulation/{id}', [SimulationController::class, 'runSimulation'])->name('simulation.show');
 Route::post('/notes/run-simulation/{id}', [SimulationController::class, 'runSimulation']);
 Route::delete('/notes/simulation/{id}/delete', [SimulationController::class, 'deleteScenario'])->name('simulation.delete');
+Route::post('/notes/{id}/favorite', [SimulationController::class, 'toggleFavorite'])->name('notes.favorite');
+Route::post('/notes/{id}/avoid', [SimulationController::class, 'toggleAvoid'])->name('notes.avoid');
+Route::post('/notes/{id}/update-notes', [SimulationController::class, 'updateNotes'])->name('notes.update-notes');
 
 Route::get('notes-export', [NoteController::class, 'export'])->name('notes.export');
 Route::post('notes-import', [NoteController::class, 'import'])->name('notes.import');

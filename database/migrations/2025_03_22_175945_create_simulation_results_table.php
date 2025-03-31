@@ -20,8 +20,6 @@ return new class extends Migration
             $table->timestamp('completed_at')->nullable();
             $table->timestamps();
 
-// Foreign key constraint
-//            $table->foreign('note_id')->references('note_id')->on('notes')->onDelete('cascade');
         });
     }
 

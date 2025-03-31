@@ -3,8 +3,30 @@
         Simulation Result
     </x-slot:heading>
 
+
     <h1>What-If Scenarios for Note #{{ $note->id }}</h1>
-    <p><strong>Note ID:</strong> {{ $note->note_id }}</p>
+    <p><strong>Note ID:</strong> {{ $note->note_id }}
+        <strong>Note Link:</strong> <a href="{{ $note->url }}">{{ $note->url }}</a></p>
+
+    <!-- Favorite Toggle -->
+    <form action="{{ route('notes.favorite', $note->id) }}" method="POST"
+          style="display:inline;">
+        @csrf
+        <button type="submit"
+                class="btn btn-sm {{ $note->is_favorite ? 'btn-warning' : 'btn-outline-warning' }}">
+            <i class="fa fa-star"></i> {{ $note->is_favorite ? 'Unfavorite' : 'Favorite' }}
+        </button>
+    </form>
+
+    <!-- Avoid Toggle -->
+    <form action="{{ route('notes.avoid', $note->id) }}" method="POST"
+          style="display:inline;">
+        @csrf
+        <button type="submit"
+                class="btn btn-sm {{ $note->is_avoid ? 'btn-danger' : 'btn-outline-danger' }}">
+            <i class="fa fa-ban"></i> {{ $note->is_avoid ? 'Unavoid' : 'Avoid' }}
+        </button>
+    </form>
 
     @if ($errors->any())
         <div class="alert alert-danger">
@@ -67,6 +89,7 @@
         </div>
     </form>
 
+
     <h2>Existing Scenarios</h2>
 
     @if (empty($result) && isset($result['error']))
@@ -75,6 +98,16 @@
 
     @if ($scenarios->isNotEmpty())
         @foreach ($scenarios as $scenario)
+
+            @if (!empty($scenario->example_scenarios))
+                <h5>Example Scenarios to Try: Discounts</h5>
+                <ul>
+                    <li>Purchase Price@Discount: listing_price - (listing_price * %)</li>
+                    @foreach ($scenario->example_scenarios as $key => $discount)
+                        <li>{{ $key }}%: {{ $discount }}</li>
+                    @endforeach
+                </ul>
+            @endif
 
             <h3>{{ $scenario->name }} (Run at {{ $scenario->completed_at->toDateTimeString() }})</h3>
             <p><strong>Parameters:</strong></p>
@@ -89,43 +122,89 @@
                 <li>Baseline IRR: {{ $note->getNumberPercent($scenario->result['baseline_irr']) }}</li>
             </ul>
 
-
-            <h4>Analysis</h4>
+            {{--                ' ↑' : ' ↓'--}}
+            <h4 class="text-2xl font-bold mb-4">Simulation Result Analysis</h4>
             @if (!empty($scenario->analysis))
                 <ul>
-                    <li>Mean IRR: {{ $note->getNumberPercent($scenario->analysis['mean_irr']['value']) }}
-                        ({{ $scenario->analysis['mean_irr']['is_high'] ? 'High (Good)' : 'Not High' }})
+                    <li>Mean IRR (↑): {{ $note->getNumberPercent($scenario->analysis['mean_irr']['value']) }}
+                        <span class="{{ $scenario->analysis['mean_irr']['is_high'] ? 'bg-success text-white' : 'bg-danger text-white' }} p-1 rounded"
+                              data-bs-toggle="tooltip" title="High IRR indicates strong returns">
+                            <i class="fa {{ $scenario->analysis['mean_irr']['is_high'] ? 'fa-check' : 'fa-times' }}"></i>
+                            {{ $scenario->analysis['mean_irr']['is_high'] ? 'High (Good)' : 'Not High' }}
+                        </span>
+                        <p>{{ $scenario->analysis['mean_irr']['description'] ?? '' }}</p>
+
                     </li>
-                    <li>Median IRR vs Mean:
-                        Median {{ $note->getNumberPercent($scenario->analysis['median_vs_mean']['median']) }}
-                        vs Mean {{ $note->getNumberPercent($scenario->analysis['median_vs_mean']['mean']) }}
-                        ({{ $scenario->analysis['median_vs_mean']['is_median_less'] ? 'Median < Mean (Good)' : 'Median >= Mean' }}
-                        )
+                    <li>Median IRR vs Mean (↑): Median {{ $note->getNumberPercent($scenario->analysis['median_vs_mean']['median']) }}vs Mean {{ $note->getNumberPercent($scenario->analysis['median_vs_mean']['mean']) }}
+                        <span class="{{ $scenario->analysis['median_vs_mean']['is_median_less'] ? 'bg-success text-white' : 'bg-danger text-white' }} p-1 rounded"
+                              data-bs-toggle="tooltip" title="High IRR indicates strong returns">
+                            <i class="fa {{ $scenario->analysis['median_vs_mean']['is_median_less'] ? 'fa-check' : 'fa-times' }}"></i>
+                            {{ $scenario->analysis['median_vs_mean']['is_median_less'] ? 'High (Good)' : 'Not High' }}
+                        </span>
+
+                        <p>{{ $scenario->analysis['median_vs_mean']['description'] ?? '' }}</p>
                     </li>
-                    <li>Standard Deviation: {{ $note->getNumberPercent($scenario->analysis['std_irr']['value']) }}
-                        ({{ $scenario->analysis['std_irr']['is_low'] ? 'Low (Good)' : 'Not Low' }})
+                    <li>Standard Deviation (↓): {{ $note->getNumberPercent($scenario->analysis['std_irr']['value']) }}
+                        <span class="{{ $scenario->analysis['std_irr']['is_low'] ? 'bg-success text-white' : 'bg-danger text-white' }} p-1 rounded"
+                              data-bs-toggle="tooltip" title="Lower means stability">
+                            <i class="fa {{ $scenario->analysis['std_irr']['is_low'] ? 'fa-check' : 'fa-times' }}"></i>
+                            {{ $scenario->analysis['std_irr']['is_low'] ? 'Low (Good)' : 'Not Low' }}
+                        </span>
+                        <p>{{ $scenario->analysis['std_irr']['description'] ?? '' }}</p>
                     </li>
-                    <li>5th Percentile: {{ $note->getNumberPercent($scenario->analysis['percentile_5']['value']) }}
-                        ({{ $scenario->analysis['percentile_5']['is_positive'] ? 'Positive (Green Light)' : 'Not Positive' }}
-                        )
+                    <li>5th Percentile (↑): {{ $note->getNumberPercent($scenario->analysis['percentile_5']['value']) }}
+                        ({{ $scenario->analysis['percentile_5']['is_positive'] ? 'Positive (Green Light)' : 'Not Positive' }})
+
+                        <span class="{{ $scenario->analysis['percentile_5']['is_positive'] ? 'bg-success text-white' : 'bg-danger text-white' }} p-1 rounded"
+                              data-bs-toggle="tooltip" title="Higher the better">
+                            <i class="fa {{ $scenario->analysis['percentile_5']['is_positive'] ? 'fa-check' : 'fa-times' }}"></i>
+                            {{ $scenario->analysis['percentile_5']['is_positive'] ? 'Positive (Green Light)' : 'Not Positive' }}
+                        </span>
+
+                        <p>{{ $scenario->analysis['percentile_5']['description'] ?? '' }}</p>
                     </li>
-                    <li>95th Percentile: {{ $note->getNumberPercent($scenario->analysis['percentile_95']['value']) }}
-                        ({{ $scenario->analysis['percentile_95']['is_high'] ? 'High (Good)' : 'Not High' }})
+                    <li>95th Percentile (↑): {{ $note->getNumberPercent($scenario->analysis['percentile_95']['value']) }}
+                        <span class="{{ $scenario->analysis['percentile_95']['is_high'] ? 'bg-success text-white' : 'bg-danger text-white' }} p-1 rounded"
+                              data-bs-toggle="tooltip" title="Higher the better">
+                            <i class="fa {{ $scenario->analysis['percentile_95']['is_high'] ? 'fa-check' : 'fa-times' }}"></i>
+                            {{ $scenario->analysis['percentile_95']['is_high'] ? 'High (Good)' : 'Not High' }}
+                        </span>
+                        <p>{{ $scenario->analysis['percentile_95']['description'] ?? '' }}</p>
                     </li>
-                    <li>Probability of Loss: {{ $note->getNumberPercent($scenario->analysis['prob_loss']['value']) }}
-                        ({{ $scenario->analysis['prob_loss']['is_low'] ? 'Low (Good)' : 'Not Low' }})
+                    <li>Probability of Loss (↓): {{ $note->getNumberPercent($scenario->analysis['prob_loss']['value']) }}
+                        <span class="{{ $scenario->analysis['prob_loss']['is_low'] ? 'bg-success text-white' : 'bg-danger text-white' }} p-1 rounded"
+                              data-bs-toggle="tooltip" title="Lower the better">
+                            <i class="fa {{ $scenario->analysis['prob_loss']['is_low'] ? 'fa-check' : 'fa-times' }}"></i>
+                            {{ $scenario->analysis['prob_loss']['is_low'] ? 'Low (Good)' : 'Not Low' }}
+                        </span>
+                        <p>{{ $scenario->analysis['prob_loss']['description'] ?? '' }}</p>
                     </li>
-                    <li>Probability of IRR >
-                        8%: {{ $note->getNumberPercent($scenario->analysis['prob_above_8']['value']) }}
-                        ({{ $scenario->analysis['prob_above_8']['is_high'] ? 'High (Good)' : 'Not High' }})
+                    <li>Probability of IRR > 8% (↑): {{ $note->getNumberPercent($scenario->analysis['prob_above_8']['value']) }}
+                        <span class="{{ $scenario->analysis['prob_above_8']['is_high'] ? 'bg-success text-white' : 'bg-danger text-white' }} p-1 rounded"
+                              data-bs-toggle="tooltip" title="Higher the better">
+                            <i class="fa {{ $scenario->analysis['prob_above_8']['is_high'] ? 'fa-check' : 'fa-times' }}"></i>
+                            {{ $scenario->analysis['prob_above_8']['is_high'] ? 'High (Good)' : 'Not High' }}
+                        </span>
+                        <p>{{ $scenario->analysis['prob_above_8']['description'] ?? '' }}</p>
                     </li>
                 </ul>
 
-                <form action="{{ url('/notes/simulation/' . $scenario->id . '/delete') }}" method="POST" style="display:inline;">
+                <form action="{{ url('/notes/simulation/' . $scenario->id . '/delete') }}" method="POST"
+                      style="display:inline;">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete this scenario?')">Delete</button>
+                    <button type="submit" class="btn btn-danger btn-sm"
+                            onclick="return confirm('Delete this scenario?')">Delete
+                    </button>
                 </form>
+
+                <h5>Notes</h5>
+                @if (!empty($scenario->notes))
+                    {{ $scenario->notes }}
+                @else
+                    <p>Missing Notes.</p>
+                @endif
+
             @else
                 <p>No analysis yet.</p>
             @endif
@@ -134,8 +213,8 @@
         <p>No scenarios yet. Add one above.</p>
     @endif
 
-    @if ($scenarios->isNotEmpty())
-        <h2>Scenario Comparison</h2>
+    @if (!empty($scenarios) && $scenarios->isNotEmpty())
+        <h2 class="text-2xl font-bold mb-4">Scenario Comparison</h2>
         <table class="table table-bordered">
             <thead>
             <tr>
@@ -151,16 +230,18 @@
             </thead>
             <tbody>
             @foreach ($scenarios as $scenario)
-                <tr>
-                    <td>{{ $scenario->name }}</td>
-                    <td>{{ $scenario->analysis['mean_irr']['value'] }}</td>
-                    <td>{{ $scenario->analysis['median_vs_mean']['median'] }}</td>
-                    <td>{{ $scenario->analysis['std_irr']['value'] }}</td>
-                    <td>{{ $scenario->analysis['percentile_5']['value'] }}</td>
-                    <td>{{ $scenario->analysis['percentile_95']['value'] }}</td>
-                    <td>{{ $scenario->analysis['prob_loss']['value'] }}</td>
-                    <td>{{ $scenario->analysis['prob_above_8']['value'] }}</td>
-                </tr>
+                @if (!empty($scenario->analysis))
+                    <tr>
+                        <td>{{ $scenario->name }}</td>
+                        <td>{{ $note->getNumberPercent($scenario->analysis['mean_irr']['value']) }}</td>
+                        <td>{{ $note->getNumberPercent($scenario->analysis['median_vs_mean']['median']) }}</td>
+                        <td>{{ $note->getNumberPercent($scenario->analysis['std_irr']['value']) }}</td>
+                        <td>{{ $note->getNumberPercent($scenario->analysis['percentile_5']['value']) }}</td>
+                        <td>{{ $note->getNumberPercent($scenario->analysis['percentile_95']['value']) }}</td>
+                        <td>{{ $note->getNumberPercent($scenario->analysis['prob_loss']['value']) }}</td>
+                        <td>{{ $note->getNumberPercent($scenario->analysis['prob_above_8']['value']) }}</td>
+                    </tr>
+                @endif
             @endforeach
             </tbody>
         </table>

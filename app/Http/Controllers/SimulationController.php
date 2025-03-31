@@ -51,23 +51,29 @@ class SimulationController extends Controller
         try {
 
             $response = Http::timeout(3600)->post('http://simulation_api:8001/simulation', $data);
+            $amount = $note->getRawOriginal('listing_price') ?? $note->getRawOriginal('upb_initial');
+            $example_scenarios = SimulationResult::getExampleScenarios($amount);
 
             if ($response->successful()) {
                 $result = $response->json();
                 $analysis = SimulationResult::analyzeResult($result);
+
                 $simulationResult = $note->simulationResults()->create([
                     'name' => $name,
                     'parameters' => $parameters,
                     'result' => $result,
                     'analysis' => $analysis,
+                    'example_scenarios' => $example_scenarios,
                     'completed_at' => now(),
                 ]);
                 return redirect()->route('simulation.show', $note->id);
             }
+
             return view('simulation', [
                 'result' => ['error' => 'API request failed: ' . $response->status()],
                 'note' => $note,
                 'scenarios' => $note->simulationResults()->latest('completed_at')->get(),
+                'example_scenarios' => $example_scenarios,
             ]);
         } catch (\Exception $e) {
             return view('simulation', [
@@ -85,4 +91,26 @@ class SimulationController extends Controller
         $scenario->delete();
         return redirect()->route('simulation.show', $noteId)->with('success', 'Scenario deleted.');
     }
+
+    public function toggleFavorite($id)
+    {
+        $note = Note::findOrFail($id);
+        $note->update(['is_favorite' => !$note->is_favorite]);
+        return redirect()->back()->with('success', $note->is_favorite ? 'Note marked as favorite.' : 'Note unmarked as favorite.');
+    }
+
+    public function toggleAvoid($id)
+    {
+        $note = Note::findOrFail($id);
+        $note->update(['is_avoid' => !$note->is_avoid]);
+        return redirect()->back()->with('success', $note->is_avoid ? 'Note marked to avoid.' : 'Note unmarked to avoid.');
+    }
+
+    public function updateNotes($id)
+    {
+        $note = Note::findOrFail($id);
+        $note->update(['notes' => request('notes')]);
+        return redirect()->back()->with('success', 'Notes updated successfully.');
+    }
+
 }

@@ -16,9 +16,20 @@ class NoteController extends Controller
      */
     public function index()
     {
-        $notes = Note::paginate(15);
+        $query = Note::query();
+        if (request('favorite')) {
+            $query->where('is_favorite', true);
+        }
+        if (request('avoid')) {
+            $query->where('is_avoid', true);
+        }
 
-        return view('notes.index', compact('notes'));
+        // Apply sorting
+        $sort = request('sort', 'id'); // Default sort by note_id
+        $direction = request('direction', 'asc');
+        $query->orderBy($sort, $direction);
+
+        return view('notes.index', ['notes' => $query->paginate(15)]);
     }
 
     public function create()

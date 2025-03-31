@@ -1,17 +1,41 @@
 <x-layout>
-    <x-slot:heading>
-        Note Listings
-    </x-slot:heading>
+    <style>
+        th a.active {
+            font-weight: bold;
+            color: #007bff;
+        }
+    </style>
 
     <script>
-        document.querySelectorAll('form').forEach(form => {
-            form.addEventListener('submit', function() {
-                const button = this.querySelector('button[type="submit"]');
-                button.disabled = true;
-                button.innerHTML = 'Running... <i class="fa fa-spinner fa-spin"></i>';
+        document.querySelectorAll('.toggle-btn').forEach(button => {
+
+            button.addEventListener('click', function (e) {
+                console.log('Made it');
+                e.preventDefault();
+                const form = this.closest('form');
+                fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json',
+                    },
+                    body: new FormData(form)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            this.classList.toggle('btn-warning', data.is_favorite);
+                            this.classList.toggle('btn-outline-warning', !data.is_favorite);
+                            this.textContent = data.is_favorite ? '★ Unfavorite' : '★ Favorite';
+                        }
+                    });
             });
         });
     </script>
+
+    <x-slot:heading>
+        Note Listings
+    </x-slot:heading>
 
     <div class="container">
         <div class="card mt-5">
@@ -35,32 +59,91 @@
                     </div>
                 @endif
 
-                <form action="{{ route('notes.import') }}" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    <input type="file" name="file" class="form-control">
-                    <br>
-                    <button class="btn btn-success"><i class="fa fa-file"></i> Import Note Data</button>
-                </form>
+                <section>
+                    <form action="{{ route('notes.import') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <input type="file" name="file" class="form-control">
+                        <br>
+                        <button class="btn btn-success"><i class="fa fa-file"></i> Import Note Data</button>
+                    </form>
+                </section>
+                <hr>
+                <div class="mb-3">
+                    <a href="{{ url('/notes?favorite=1') }}" class="btn btn-success toggle-btn">Show Favorites</a>
+                    <a href="{{ url('/notes?avoid=1') }}" class="btn btn-danger toggle-btn">Show Avoided</a>
+                    <a href="{{ url('/notes') }}" class="btn btn-secondary toggle-btn">Show All</a>
+                </div>
 
                 <table class="table table-bordered mt-3">
                     <tr>
-                        <th colspan="7">
+                        <th colspan="8">
                             List Of Notes
                             <a class="btn btn-warning float-end" href="{{ route('notes.export') }}"><i
                                     class="fa fa-download"></i> Export Note Data</a>
                         </th>
                     </tr>
                     <tr>
-                        <th>ID</th>
-                        <th>Listing Price</th>
-                        <th>UnPaid Balance</th>
-                        <th>Monthly Payment</th>
-                        <th>Term Months</th>
-                        <th>Interest Rate</th>
+                        <th>
+                            <a href="{{ url('/notes?sort=id&direction=' . (request('sort') === 'id' && request('direction') === 'asc' ? 'desc' : 'asc') . (request('favorite') ? '&favorite=1' : '') . (request('avoid') ? '&avoid=1' : '')) }}">
+                                ID
+                            </a>
+                            @if (request('sort') === 'id')
+                                {{ request('direction') === 'asc' ? ' ↑' : ' ↓' }}
+                            @endif
+                        </th>
+                        <th>
+                            <a href="{{ url('/notes?sort=note_id&direction=' . (request('sort') === 'note_id' && request('direction') === 'asc' ? 'desc' : 'asc') . (request('favorite') ? '&favorite=1' : '') . (request('avoid') ? '&avoid=1' : '')) }}">
+                                Note ID
+                            </a>
+                            @if (request('sort') === 'note_id')
+                                {{ request('direction') === 'asc' ? ' ↑' : ' ↓' }}
+                            @endif
+                        </th>
+                        <th>
+                            <a href="{{ url('/notes?sort=listing_price&direction=' . (request('sort') === 'listing_price' && request('direction') === 'asc' ? 'desc' : 'asc') . (request('favorite') ? '&favorite=1' : '') . (request('avoid') ? '&avoid=1' : '')) }}">
+                                Listing Price
+                            </a>
+                            @if (request('sort') === 'listing_price')
+                                {{ request('direction') === 'asc' ? ' ↑' : ' ↓' }}
+                            @endif
+                        </th>
+                        <th>
+                            <a href="{{ url('/notes?sort=upb_initial&direction=' . (request('sort') === 'upb_initial' && request('direction') === 'asc' ? 'desc' : 'asc') . (request('favorite') ? '&favorite=1' : '') . (request('avoid') ? '&avoid=1' : '')) }}">
+                                UnPaid Balance
+                            </a>
+                            @if (request('sort') === 'upb_initial')
+                                {{ request('direction') === 'asc' ? ' ↑' : ' ↓' }}
+                            @endif
+                        </th>
+                        <th>
+                            <a href="{{ url('/notes?sort=monthly_pi&direction=' . (request('sort') === 'monthly_pi' && request('direction') === 'asc' ? 'desc' : 'asc') . (request('favorite') ? '&favorite=1' : '') . (request('avoid') ? '&avoid=1' : '')) }}">
+                                Monthly Payment
+                            </a>
+                            @if (request('sort') === 'monthly_pi')
+                                {{ request('direction') === 'asc' ? ' ↑' : ' ↓' }}
+                            @endif
+                        </th>
+                        <th>
+                            <a href="{{ url('/notes?sort=term_months&direction=' . (request('sort') === 'term_months' && request('direction') === 'asc' ? 'desc' : 'asc') . (request('favorite') ? '&favorite=1' : '') . (request('avoid') ? '&avoid=1' : '')) }}">
+                                Term Months
+                            </a>
+                            @if (request('sort') === 'term_months')
+                                {{ request('direction') === 'asc' ? ' ↑' : ' ↓' }}
+                            @endif
+                        </th>
+                        <th>
+                            <a href="{{ url('/notes?sort=interest_rate&direction=' . (request('sort') === 'interest_rate' && request('direction') === 'asc' ? 'desc' : 'asc') . (request('favorite') ? '&favorite=1' : '') . (request('avoid') ? '&avoid=1' : '')) }}">
+                                Interest Rate
+                            </a>
+                            @if (request('sort') === 'interest_rate')
+                                {{ request('direction') === 'asc' ? ' ↑' : ' ↓' }}
+                            @endif
+                        </th>
                         <th>Actions</th>
                     </tr>
                     @foreach ($notes as $key => $note)
-                        <tr>
+                        <tr class="{{ $note->is_favorite ? 'table-success' : ($note->is_avoid ? 'table-danger' : '') }}">
+                            <td>{{ $note->id }}</td>
                             <td>{{ $note->note_id }}</td>
                             <td>{{ $note->listing_price }}</td>
                             <td>{{ $note->upb_initial }}</td>
@@ -68,6 +151,25 @@
                             <td>{{ $note->term_months }}</td>
                             <td>{{ $note->interest_rate }}</td>
                             <td>
+                                <!-- Favorite Toggle -->
+                                <form action="{{ route('notes.favorite', $note->id) }}" method="POST"
+                                      style="display:inline;">
+                                    @csrf
+                                    <button type="submit"
+                                            class="btn btn-sm {{ $note->is_favorite ? 'btn-warning' : 'btn-outline-warning' }}">
+                                        <i class="fa fa-star"></i> {{ $note->is_favorite ? 'Unfavorite' : 'Favorite' }}
+                                    </button>
+                                </form>
+
+                                <!-- Avoid Toggle -->
+                                <form action="{{ route('notes.avoid', $note->id) }}" method="POST"
+                                      style="display:inline;">
+                                    @csrf
+                                    <button type="submit"
+                                            class="btn btn-sm {{ $note->is_avoid ? 'btn-danger' : 'btn-outline-danger' }}">
+                                        <i class="fa fa-ban"></i> {{ $note->is_avoid ? 'Unavoid' : 'Avoid' }}
+                                    </button>
+                                </form>
                                 <!-- Form for new what-if scenario -->
                                 <form action="{{ url('/notes/run-simulation/' . $note->id) }}" method="POST">
                                     @csrf
@@ -113,12 +215,20 @@
                                                value="{{ $note->getRawOriginal('interest_rate') }}" step="0.01">
                                     </div>
                                     <div class="col-md-12">
-                                        <button type="submit">Run Scenario</button>
+                                        <button type="submit" class="btn btn-primary">Run Scenario</button>
                                     </div>
                                 </form>
 
                                 <!-- Link to view results -->
                                 <a href="{{ url('/notes/run-simulation/' . $note->id) }}">View Scenarios</a>
+
+                                <form action="{{ route('notes.update-notes', $note->id) }}" method="POST" class="mt-2">
+                                    @csrf
+                                    <label for="notes_{{ $note->id }}">Notes:</label>
+                                    <textarea name="notes" id="notes_{{ $note->id }}" class="form-control" rows="2" placeholder="Add your notes here...">{{ $note->notes }}</textarea>
+                                    <button type="submit" class="btn btn-secondary btn-sm mt-1">Save Notes</button>
+                                </form>
+
                             </td>
                         </tr>
                     @endforeach
@@ -131,4 +241,18 @@
             {{ $notes->links() }}
         </div>
     </div>
+
+    <script>
+        document.querySelectorAll('.simulation-form').forEach(form => {
+            form.addEventListener('submit', function() {
+                const button = this.querySelector('button[type="submit"]');
+                const spinner = button.querySelector('.spinner');
+                const text = button.querySelector('.text');
+                button.disabled = true;
+                spinner.style.display = 'inline';
+                text.textContent = 'Running...';
+            });
+        });
+    </script>
+
 </x-layout>
