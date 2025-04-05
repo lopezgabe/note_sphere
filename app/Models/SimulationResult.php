@@ -23,7 +23,16 @@ class SimulationResult extends Model
 
     public static function analyzeResult($result)
     {
+        if (!empty($result['purchase_price']) && !empty($result['monthly_pi'])) {
+            $recoup = $result['purchase_price'] / $result['monthly_pi'];
+        }
+
         return [
+            'recoup' => [
+                'value' =>  $recoup ?? 0,
+                'is_low' => ($recoup ?? 0) < 61,
+                'description' => "The number of months to recoup investment.",
+            ],
             'mean_irr' => [
                 'value' => $result['mean_irr'] ?? null,
                 'is_high' => ($result['mean_irr'] ?? 0) > 0.10,
@@ -37,7 +46,7 @@ class SimulationResult extends Model
                 'description' => "The Median Internal Rate of Return: the middle IRR value (50th percentile) half the trials yield more, half yield less. Removes outliers.
                     Favor notes where the Median IRR is well above you minimum acceptable return (8-10%). Higher is better.",
             ],
-            'std_irr' => [  // Changed from std_dev
+            'std_irr' => [
                 'value' => $result['std_irr'] ?? null,
                 'is_low' => ($result['std_irr'] ?? 0) < 0.10,
                 'description' => "Measures the variability of IRR outcomes. A higher Standard Deviation means returns fluctuate widely indicating higher uncertainty. Lower is better.",
@@ -57,7 +66,7 @@ class SimulationResult extends Model
                 'is_low' => ($result['prob_loss'] ?? 0) < 0.20,
                 'description' => "The chance your IRR goes negative, meaning you lose money overall. Set the threshold (< 10% probability of loss) to ensure profit isn't wiped out by bad scenarios. Lower is better.",
             ],
-            'prob_above_8' => [  // Changed from prob_irr_above_8
+            'prob_above_8' => [
                 'value' => $result['prob_above_8'] ?? null,
                 'is_high' => ($result['prob_above_8'] ?? 0) > 0.50,
                 'description' => "The likelihood your IRR exceeds 8%, a common benchmark for other investments. Higher is better.",
